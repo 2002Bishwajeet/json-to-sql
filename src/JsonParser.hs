@@ -1,6 +1,5 @@
 module JsonParser
-  ( JsonValue (..),
-    parseJsonString,
+  ( parseJsonString,
     parseJsonNumber,
     parseJsonBoolOrNull,
     parseJsonObject,
@@ -15,23 +14,12 @@ where
 import Data.Char (isDigit)
 import Data.List (isPrefixOf)
 import Debug.Trace
+import Json (JsonValue (..))
 import Utils (countDots, dropLeading)
-
-data JsonValue
-  = JsonNull
-  | JsonBool Bool
-  | JsonNumber Double
-  | JsonString String
-  | JsonArray [JsonValue]
-  | JsonObject [(String, JsonValue)]
-  deriving (Show, Eq)
 
 -- | Parse a JsonString from a string and return the parsed JsonValue and the rest of the string
 parseJsonString :: String -> Maybe (JsonValue, String)
 parseJsonString ('"' : xs) =
-  -- We will do basic parsing here, without handling escape characters
-  -- if the text is between quotes, it is a valid string
-  -- Else we will throw an error
   case break (== '"') xs of
     (str, '"' : rest) -> Just (JsonString str, dropLeading rest) -- This removes closing quote
     _ -> Nothing
@@ -42,7 +30,13 @@ parseJsonNumber str =
   let (numStr, rest) = span (\c -> isDigit c || c == '.' || c == '-') str
    in if null numStr || numStr == "-" || countDots numStr > 1 -- Handle multiple dots
         then Nothing
-        else Just (JsonNumber (read numStr), rest)
+        else
+          Just
+            ( if '.' `elem` numStr
+                then JsonDouble (read numStr)
+                else JsonInt (read numStr),
+              rest
+            )
 
 parseJsonBoolOrNull :: String -> Maybe (JsonValue, String)
 parseJsonBoolOrNull str

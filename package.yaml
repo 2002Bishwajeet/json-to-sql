@@ -47,6 +47,7 @@ executables:
       - -with-rtsopts=-N
     dependencies:
       - json-to-sql
+      - base >= 4.7 && < 5
 
 tests:
   json-to-sql-test:
