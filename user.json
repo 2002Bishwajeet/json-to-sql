@@ -1,0 +1,16 @@
+{
+  "id": 1,
+  "name": "John Doe",
+  "email": "john65@example.com",
+  "phone": "123-456-7890",
+  "address": {
+    "street": "123 Main St",
+    "city": "Springfield",
+    "state": "IL",
+    "zip": "62701"
+  },
+  "preferences": {
+    "theme": "dark",
+    "language": "en"
+  }
+}
