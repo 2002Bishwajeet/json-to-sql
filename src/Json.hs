@@ -1,4 +1,4 @@
-module Json (JsonValue (..), jsonValueToString, jsonValueToSqlType) where
+module Json (JsonValue (..), jsonValueToString, jsonValueToSqlType, isJsonObject, isOnlyJsonArrayObject) where
 
 data JsonValue
   = JsonNull
@@ -40,3 +40,17 @@ jsonValueToSqlType (JsonString _) = "TEXT"
 -- JSON arrays and objects are stored as strings -- TODO: Should we create a new table for this?
 jsonValueToSqlType (JsonArray _) = "TEXT"
 jsonValueToSqlType (JsonObject _) = "TEXT"
+
+-- Function to check if json objects contains a single key value pair of  "data" : [array of objects]
+isOnlyJsonArrayObject :: JsonValue -> Bool
+-- isOnlyJsonArrayObject (JsonArray arr) = all (\v -> case v of JsonObject _ -> True; _ -> False) arr -- we can also do this
+isOnlyJsonArrayObject (JsonArray arr) = all isJsonObject arr
+isOnlyJsonArrayObject (JsonObject obj) = case obj of
+  [(_, JsonArray arr)] -> all isJsonObject arr
+  _ -> False
+isOnlyJsonArrayObject _ = False
+
+-- Check if the json value is an object
+isJsonObject :: JsonValue -> Bool
+isJsonObject (JsonObject _) = True
+isJsonObject _ = False
