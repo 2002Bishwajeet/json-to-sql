@@ -10,6 +10,7 @@ A simple json parser that converts json to sql queries. All the parsed queries a
 - Supports Insertion of data
 - Handles arrays and nested objects
 - Supports multiple data types
+- Transcation Sql queries
 
 ## Installing
 

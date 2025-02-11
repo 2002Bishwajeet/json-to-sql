@@ -2,6 +2,7 @@ module Main (main) where
 
 import Control.Monad (unless)
 import Data.Maybe
+import Data.Time.Clock (diffUTCTime, getCurrentTime)
 import Lib
 import System.Directory (doesFileExist)
 import System.Environment (getArgs)
@@ -76,11 +77,16 @@ convertToSql config json = do
 
 main :: IO ()
 main = do
+  start <- getCurrentTime
   config <- parseArgs
   json <- readAndParseJson (filepath config)
-  case json of
+  _ <- case json of
     Just j -> do
       let sql = convertToSql config j
-      writeFile (destPath config ++ "/" ++ tableName config ++ ".sql") sql
-      print "SQL file created"
+          outputFile = destPath config ++ "/" ++ tableName config ++ ".sql"
+      writeFile outputFile sql
+      putStrLn $ "SQL file created successfully: " ++ outputFile
     _ -> error "Invalid JSON"
+  end <- getCurrentTime
+  let diff = diffUTCTime end start
+  putStrLn $ "Execution time: " ++ show diff

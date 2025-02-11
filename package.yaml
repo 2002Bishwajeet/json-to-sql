@@ -24,6 +24,7 @@ dependencies:
   - HUnit
   - filepath
   - directory
+  - time
 
 ghc-options:
   - -Wall
