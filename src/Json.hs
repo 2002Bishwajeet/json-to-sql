@@ -1,4 +1,6 @@
-module Json (JsonValue (..), jsonValueToString, jsonValueToSqlType, isJsonObject, isOnlyJsonArrayObject) where
+module Json (JsonValue (..), jsonValueToString, jsonValueToSqlType, isJsonObject, isOnlyJsonArrayObject, jsonValueToArray) where
+
+import Data.List (intercalate)
 
 data JsonValue
   = JsonNull
@@ -15,20 +17,20 @@ jsonValueToString JsonNull = "NULL"
 jsonValueToString (JsonBool b) = if b then "TRUE" else "FALSE"
 jsonValueToString (JsonInt n) = show n
 jsonValueToString (JsonDouble d) = show d
-jsonValueToString (JsonString s) = "'" ++ escapeSingleQuotes s ++ "'"
-jsonValueToString (JsonArray a) = "'" ++ jsonArrayToSqlString a ++ "'"
-jsonValueToString (JsonObject o) = "'" ++ jsonObjectToSqlString o ++ "'"
+jsonValueToString (JsonString s) = "\"" ++ escapeSingleQuotes s ++ "\""
+jsonValueToString (JsonArray a) = "\"" ++ jsonArrayToSqlString a ++ "\""
+jsonValueToString (JsonObject o) = "\"" ++ jsonObjectToSqlString o ++ "\""
 
 escapeSingleQuotes :: String -> String
-escapeSingleQuotes = concatMap (\c -> if c == '\'' then "''" else [c])
+escapeSingleQuotes = concatMap (\c -> if c == '\"' then "\"\"" else [c])
 
 jsonArrayToSqlString :: [JsonValue] -> String
-jsonArrayToSqlString arr = "[" ++ unwords (map jsonValueToString arr) ++ "]"
+jsonArrayToSqlString arr = "[" ++ intercalate ", " (map jsonValueToString arr) ++ "]"
 
 jsonObjectToSqlString :: [(String, JsonValue)] -> String
-jsonObjectToSqlString obj = "{" ++ unwords (map keyValueToString obj) ++ "}"
+jsonObjectToSqlString obj = "{" ++ intercalate ", " (map keyValueToString obj) ++ "}"
   where
-    keyValueToString (k, v) = "'" ++ escapeSingleQuotes k ++ "': " ++ jsonValueToString v
+    keyValueToString (k, v) = "\"" ++ escapeSingleQuotes k ++ "\": " ++ jsonValueToString v
 
 -- Determines the column type of a JSON value
 jsonValueToSqlType :: JsonValue -> String
@@ -54,3 +56,15 @@ isOnlyJsonArrayObject _ = False
 isJsonObject :: JsonValue -> Bool
 isJsonObject (JsonObject _) = True
 isJsonObject _ = False
+
+jsonValueToArray :: JsonValue -> Maybe [JsonValue]
+jsonValueToArray (JsonArray arr) = Just arr
+jsonValueToArray (JsonObject obj) =
+  if isOnlyJsonArrayObject (JsonObject obj)
+    then
+      ( case obj of
+          [(_, JsonArray arr)] -> Just arr
+          _ -> Nothing
+      )
+    else Nothing
+jsonValueToArray _ = Nothing

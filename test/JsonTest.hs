@@ -11,10 +11,11 @@ testJsonValueToString =
       "test JsonBool False" ~: jsonValueToString (JsonBool False) ~?= "FALSE",
       "test JsonInt" ~: jsonValueToString (JsonInt 42) ~?= "42",
       "test JsonDouble" ~: jsonValueToString (JsonDouble 3.14) ~?= "3.14",
-      "test JsonString" ~: jsonValueToString (JsonString "hello") ~?= "'hello'",
-      "test JsonString with single quote" ~: jsonValueToString (JsonString "it's") ~?= "'it''s'",
-      "test JsonArray" ~: jsonValueToString (JsonArray [JsonInt 1, JsonBool False]) ~?= "'[1 FALSE]'",
-      "test JsonObject" ~: jsonValueToString (JsonObject [("key", JsonString "value")]) ~?= "'{'key': 'value'}'"
+      "test JsonString" ~: jsonValueToString (JsonString "hello") ~?= "\"hello\"",
+      "test JsonString with single quote" ~: jsonValueToString (JsonString "it's") ~?= "\"it's\"",
+      "test JsonArray" ~: jsonValueToString (JsonArray [JsonInt 1, JsonBool False]) ~?= "\"[1, FALSE]\"",
+      "test JsonObject" ~: jsonValueToString (JsonObject [("key", JsonString "value")]) ~?= "\"{\"key\": \"value\"}\"",
+      "test JsonObject with multiple key-value pairs" ~: jsonValueToString (JsonObject [("key1", JsonString "value1"), ("key2", JsonInt 42)]) ~?= "\"{\"key1\": \"value1\", \"key2\": 42}\""
     ]
 
 testJsonValueToSqlType :: Test
@@ -47,4 +48,5 @@ testIsOnlyJsonArrayObject =
       "test JsonObject with non-array value" ~: isOnlyJsonArrayObject (JsonObject [("data", JsonString "value")]) ~?= False
     ]
 
+jsonTestList :: Test
 jsonTestList = TestList [testJsonValueToString, testJsonValueToSqlType, testIsJsonObject, testIsOnlyJsonArrayObject]

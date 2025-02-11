@@ -1,6 +1,7 @@
 module Main (main) where
 
 import Control.Monad (unless)
+import Data.Maybe
 import Lib
 import System.Directory (doesFileExist)
 import System.Environment (getArgs)
@@ -29,7 +30,7 @@ parseArgs = do
             (d : _) -> if d == "." then "." else d
             _ -> "."
       -- if No tablename provided, use the filename
-      let table = maybe (takeBaseName file) id tableNameArg
+      let table = fromMaybe (takeBaseName file) tableNameArg
       return
         Config
           { filepath = file,
@@ -51,18 +52,27 @@ readAndParseJson file = do
 
   -- Read the file
   content <- readFile file
-  -- Clear the whitespace
-  let content' = filter (`notElem` " \n\r\t") content
-   in -- Parse the JSON
+  -- Clear the whitespace at the end of document if present
+  let content' = reverse $ dropLeading $ reverse content
+   in -- if content is empty
+      -- Parse the JSON
       case parseJsonValue content' of
         Just (json, "") -> return $ Just json
         _ -> error "Invalid JSON"
 
 convertToSql :: Config -> JsonValue -> String
-convertToSql config json =
-  let createTableSql = createTable (tableName config) json
-      insertTableSql = insertTable (tableName config) json
-   in createTableSql ++ "\n\n" ++ insertTableSql
+convertToSql config json = do
+  let isOnlyJsonArray = isOnlyJsonArrayObject json
+  if isOnlyJsonArray
+    then
+      let firstObject = head (fromJust (jsonValueToArray json))
+          createTableSql = createTable (tableName config) firstObject
+          insertTableSqlStatements = map (insertTable (tableName config)) (fromJust (jsonValueToArray json))
+       in createTableSql ++ "\n\nBEGIN TRANSACTION;\n" ++ unlines insertTableSqlStatements ++ "COMMIT;"
+    else
+      let createTableSql = createTable (tableName config) json
+          insertTableSql = insertTable (tableName config) json
+       in createTableSql ++ "\n\n" ++ insertTableSql
 
 main :: IO ()
 main = do
@@ -72,4 +82,5 @@ main = do
     Just j -> do
       let sql = convertToSql config j
       writeFile (destPath config ++ "/" ++ tableName config ++ ".sql") sql
+      print "SQL file created"
     _ -> error "Invalid JSON"

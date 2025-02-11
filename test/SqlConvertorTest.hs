@@ -12,7 +12,7 @@ testCreateTable = TestCase $ do
 testInsertTable :: Test
 testInsertTable = TestCase $ do
   let json = JsonObject [("id", JsonInt 1), ("name", JsonString "John Doe"), ("age", JsonInt 30)]
-  let expected = "INSERT INTO users VALUES (1, 'John Doe', 30);"
+  let expected = "INSERT INTO users VALUES (1, \"John Doe\", 30);"
   assertEqual "for (insertTable \"users\" json)," expected (insertTable "users" json)
 
 testCreateTableWithSpecialChars :: Test
@@ -24,7 +24,7 @@ testCreateTableWithSpecialChars = TestCase $ do
 testInsertTableWithSpecialChars :: Test
 testInsertTableWithSpecialChars = TestCase $ do
   let json = JsonObject [("id", JsonInt 1), ("name", JsonString "John Doe"), ("age", JsonInt 30)]
-  let expected = "INSERT INTO users_table VALUES (1, 'John Doe', 30);"
+  let expected = "INSERT INTO users_table VALUES (1, \"John Doe\", 30);"
   assertEqual "for (insertTable \"users_table\" json)," expected (insertTable "users_table" json)
 
 sqlConvertorTests :: Test

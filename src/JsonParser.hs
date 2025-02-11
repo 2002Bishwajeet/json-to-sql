@@ -19,10 +19,16 @@ import Utils (countDots, dropLeading)
 
 -- | Parse a JsonString from a string and return the parsed JsonValue and the rest of the string
 parseJsonString :: String -> Maybe (JsonValue, String)
-parseJsonString ('"' : xs) =
-  case break (== '"') xs of
-    (str, '"' : rest) -> Just (JsonString str, dropLeading rest) -- This removes closing quote
-    _ -> Nothing
+parseJsonString ('"' : xs) = parseStringContent xs ""
+  where
+    parseStringContent :: String -> String -> Maybe (JsonValue, String)
+    parseStringContent [] _ = Nothing
+    parseStringContent ('\\' : '\"' : rest) acc = parseStringContent rest (acc ++ "\"")
+    parseStringContent ('\\' : '\\' : rest) acc = parseStringContent rest (acc ++ "\\")
+    parseStringContent ('\\' : 'n' : rest) acc = parseStringContent rest (acc ++ "\n")
+    parseStringContent ('\\' : 't' : rest) acc = parseStringContent rest (acc ++ "\t")
+    parseStringContent ('"' : rest) acc = Just (JsonString acc, dropLeading rest)
+    parseStringContent (c : rest) acc = parseStringContent rest (acc ++ [c])
 parseJsonString _ = Nothing
 
 parseJsonNumber :: String -> Maybe (JsonValue, String)
@@ -63,7 +69,7 @@ parseKeyValuePairs str =
     _ ->
       case parseKeyValuePair str of
         Just ((key, value), rest) ->
-          case rest of
+          case dropLeading rest of
             ',' : rest' ->
               let (keyValuePairs, rest'') = parseKeyValuePairs rest'
                in ((key, value) : keyValuePairs, rest'')
@@ -84,25 +90,27 @@ parseKeyValuePair str =
     _ -> Nothing
 
 parseJsonArray :: String -> Maybe (JsonValue, String)
-parseJsonArray ('[' : xs) = Just (JsonArray elements, rest)
-  where
-    (elements, rest) = parseArrayElements xs
+parseJsonArray ('[' : xs) =
+  case parseArrayElements xs of
+    Just (elements, rest) -> Just (JsonArray elements, rest)
+    Nothing -> Nothing
 parseJsonArray _ = Nothing
 
-parseArrayElements :: String -> ([JsonValue], String)
+parseArrayElements :: String -> Maybe ([JsonValue], String)
 parseArrayElements str =
   case dropLeading str of
-    ']' : rest -> ([], rest)
+    ']' : rest -> Just ([], rest)
     _ ->
       case parseJsonValue $ dropLeading str of
         Just (value, rest) ->
           case dropLeading rest of
             ',' : rest' ->
-              let (values, rest'') = parseArrayElements rest'
-               in (value : values, rest'')
-            ']' : rest' -> ([value], rest')
-            _ -> ([value], rest)
-        Nothing -> ([], str)
+              case parseArrayElements rest' of
+                Just (values, rest'') -> Just (value : values, rest'')
+                Nothing -> Nothing
+            ']' : rest' -> Just ([value], rest')
+            _ -> Nothing -- If ']' is missing, return an empty list and the original string
+        Nothing -> Nothing
 
 -- | Parse a JsonValue from a string and return the parsed JsonValue and the rest of the string
 parseJsonValue :: String -> Maybe (JsonValue, String)
