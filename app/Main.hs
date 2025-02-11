@@ -3,6 +3,7 @@ module Main (main) where
 import Control.Monad (unless)
 import Data.Maybe
 import Data.Time.Clock (diffUTCTime, getCurrentTime)
+import GHC.Base
 import Lib
 import System.Directory (doesFileExist)
 import System.Environment (getArgs)
@@ -16,8 +17,8 @@ data Config = Config
   }
   deriving (Show)
 
-parseArgs :: IO Config
-parseArgs = do
+parseConfigs :: IO Config
+parseConfigs = do
   args <- getArgs
   -- Check that we have at least file Args
 
@@ -78,15 +79,34 @@ convertToSql config json = do
 main :: IO ()
 main = do
   start <- getCurrentTime
-  config <- parseArgs
-  json <- readAndParseJson (filepath config)
-  _ <- case json of
-    Just j -> do
-      let sql = convertToSql config j
-          outputFile = destPath config ++ "/" ++ tableName config ++ ".sql"
-      writeFile outputFile sql
-      putStrLn $ "SQL file created successfully: " ++ outputFile
-    _ -> error "Invalid JSON"
-  end <- getCurrentTime
-  let diff = diffUTCTime end start
-  putStrLn $ "Execution time: " ++ show diff
+  args <- getArgs
+  when (null args) $ error "Usage: json2sql -h for help"
+  if head args == "-h" || head args == "--help"
+    then do
+      putStrLn "Usage: json2sql <file> [table] [--normalize] [dest]"
+      putStrLn "Options:"
+      putStrLn "  --normalize  Normalize the JSON data"
+      putStrLn "  dest         Destination path for the SQL file"
+      putStrLn "  table        Table name for the SQL file"
+      putStrLn "  file         JSON file to convert"
+      putStrLn "  -h           Display this help message"
+      putStrLn "  -v           Display the version"
+      return ()
+    else
+      if head args == "-v" || head args == "--version"
+        then do
+          putStrLn "json2sql version 0.0.1"
+          return ()
+        else do
+          config <- parseConfigs
+          json <- readAndParseJson (filepath config)
+          _ <- case json of
+            Just j -> do
+              let sql = convertToSql config j
+                  outputFile = destPath config ++ "/" ++ tableName config ++ ".sql"
+              writeFile outputFile sql
+              putStrLn $ "SQL file created successfully: " ++ outputFile
+            _ -> error "Invalid JSON"
+          end <- getCurrentTime
+          let diff = diffUTCTime end start
+          putStrLn $ "Execution time: " ++ show diff
