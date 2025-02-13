@@ -77,8 +77,8 @@ jobs:
       - name: Archive binaries
         run: |
           cd dist
-          zip json-to-sql-linux.zip json-to-sql-Linux
-          zip json-to-sql-macos.zip json-to-sql-macOS
+          zip json-to-sql-Linux.zip json-to-sql-Linux
+          zip json-to-sql-macOs.zip json-to-sql-macOS
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
@@ -87,7 +87,7 @@ jobs:
           name: Release ${{ github.ref }}
           body: |
             ## JSON-to-SQL CLI Release
-            - **Linux**: `json-to-sql-linux.zip`
-            - **macOS**: `json-to-sql-macos.zip`
+            - **Linux**: `json-to-sql-Linux.zip`
+            - **macOS**: `json-to-sql-macOS.zip`
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

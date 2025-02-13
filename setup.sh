@@ -9,8 +9,8 @@ TEMP_DIR=$(mktemp -d)
 # Detect OS
 OS="$(uname -s)"
 case "$OS" in
-    Linux*)   FILE="json-to-sql-linux.zip" ;;
-    Darwin*)  FILE="json-to-sql-macos.zip" ;;
+    Linux*)   FILE="json-to-sql-Linux.zip" ;;
+    Darwin*)  FILE="json-to-sql-macOS.zip" ;;
     *)        echo "Unsupported OS: $OS"; exit 1 ;;
 esac
 
@@ -29,9 +29,27 @@ curl -L "$BINARY_URL" -o "$TEMP_DIR/$FILE"
 echo "Extracting..."
 unzip -q "$TEMP_DIR/$FILE" -d "$TEMP_DIR"
 
+# List contents of the temporary directory for debugging
+echo "Contents of $TEMP_DIR:"
+ls -l "$TEMP_DIR"
+
+# Check if the extracted directory exists
+EXTRACTED_DIR="$TEMP_DIR/json-to-sql-${OS}"
+if [[ ! -d "$EXTRACTED_DIR" ]]; then
+  echo "Error: Extracted directory not found."
+  exit 1
+fi
+
+# Check if the binary exists in the extracted directory
+BINARY_PATH="$EXTRACTED_DIR/json-to-sql"
+if [[ ! -f "$BINARY_PATH" ]]; then
+  echo "Error: Extracted binary not found."
+  exit 1
+fi
+
 # Install the binary
 echo "Installing to $INSTALL_DIR..."
-sudo mv "$TEMP_DIR/json-to-sql" "$INSTALL_DIR/json-to-sql"
+sudo mv "$BINARY_PATH" "$INSTALL_DIR/json-to-sql"
 sudo chmod +x "$INSTALL_DIR/json-to-sql"
 
 # Cleanup
