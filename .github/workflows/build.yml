@@ -79,7 +79,6 @@ jobs:
           cd dist
           zip json-to-sql-linux.zip json-to-sql-linux
           zip json-to-sql-macos.zip json-to-sql-macos
-          zip json-to-sql-windows.zip json-to-sql.exe
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
@@ -90,6 +89,5 @@ jobs:
             ## JSON-to-SQL CLI Release
             - **Linux**: `json-to-sql-linux.zip`
             - **macOS**: `json-to-sql-macos.zip`
-            - **Windows**: `json-to-sql-windows.zip`
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
