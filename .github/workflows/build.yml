@@ -65,3 +65,31 @@ jobs:
         with:
           name: json-to-sql-${{ runner.os }}
           path: dist/*
+  release:
+    name: Create GitHub Release
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download all built binaries
+        uses: actions/download-artifact@v4
+        with:
+          path: dist
+      - name: Archive binaries
+        run: |
+          cd dist
+          zip json-to-sql-linux.zip json-to-sql-linux
+          zip json-to-sql-macos.zip json-to-sql-macos
+          zip json-to-sql-windows.zip json-to-sql.exe
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: dist/*.zip
+          tag_name: ${{ github.ref }}
+          name: Release ${{ github.ref }}
+          body: |
+            ## JSON-to-SQL CLI Release
+            - **Linux**: `json-to-sql-linux.zip`
+            - **macOS**: `json-to-sql-macos.zip`
+            - **Windows**: `json-to-sql-windows.zip`
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
