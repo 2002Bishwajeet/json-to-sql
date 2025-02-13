@@ -64,7 +64,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: json-to-sql-${{ runner.os }}
-          path: dist/*
+          path: dist/json-to-sql-${{ runner.os == 'Linux' && 'linux' || 'macos' }}
   release:
     name: Create GitHub Release
     needs: build
@@ -79,7 +79,7 @@ jobs:
         with:
           files: |
             dist/json-to-sql-Linux
-            dist/json-to-sql-macos
+            dist/json-to-sql-macOS
           tag_name: ${{ github.ref }}
           name: Release ${{ github.ref }}
           body: |
