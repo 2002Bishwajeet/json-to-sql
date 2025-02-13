@@ -74,12 +74,12 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           path: dist
-      - name: Print the content of the folder
-        run: ls -la dist
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
-          files: dist/*
+          files: |
+            dist/json-to-sql-Linux
+            dist/json-to-sql-macos
           tag_name: ${{ github.ref }}
           name: Release ${{ github.ref }}
           body: |
