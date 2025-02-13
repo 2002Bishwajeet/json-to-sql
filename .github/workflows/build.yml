@@ -27,6 +27,12 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-ghc-cabal-
 
+      - name: Install LLVM on macOS
+        if: runner.os == 'macOS'
+        run: brew install llvm@12
+        env:
+          PATH: /usr/local/opt/llvm@12/bin:$PATH
+
       - name: Set up Haskell (GHC & Cabal)
         uses: haskell-actions/setup@v2
         with:
