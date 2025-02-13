@@ -80,10 +80,10 @@ main :: IO ()
 main = do
   start <- getCurrentTime
   args <- getArgs
-  when (null args) $ error "Usage: json2sql -h for help"
+  when (null args) $ error "Usage: json-to-sql -h for help"
   if head args == "-h" || head args == "--help"
     then do
-      putStrLn "Usage: json2sql <file> [table] [--normalize] [dest]"
+      putStrLn "Usage: json-to-sql <file> [table] [--normalize] [dest]"
       putStrLn "Options:"
       putStrLn "  --normalize  Normalize the JSON data"
       putStrLn "  dest         Destination path for the SQL file"

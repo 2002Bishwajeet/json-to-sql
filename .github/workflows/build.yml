@@ -78,7 +78,7 @@ jobs:
         run: |
           cd dist
           zip json-to-sql-Linux.zip json-to-sql-Linux
-          zip json-to-sql-macOs.zip json-to-sql-macOS
+          zip json-to-sql-macOS.zip json-to-sql-macOS
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
