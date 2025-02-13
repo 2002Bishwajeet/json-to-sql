@@ -3,7 +3,7 @@ name: Build and Release JSON-to-SQL
 on:
   push:
     tags:
-      - "v*.*.*" # Runs on versioned tags (e.g., v1.0.0)
+      - "v*.*.*"
 
 jobs:
   build:
@@ -26,54 +26,20 @@ jobs:
       - name: Install dependencies
         run: cabal update
 
-      - name: Build executable (Linux/macOS)
-        if: runner.os != 'Windows'
+      - name: Build executable
         run: |
           cabal build
           mkdir -p dist
-          cp $(cabal list-bin exe:json-to-sql) dist/json-to-sql-${{ runner.os == 'Linux' && 'linux' || 'macos' }}
-
-      - name: Build executable (Windows)
-        if: runner.os == 'Windows'
-        run: |
-          cabal build
-          mkdir dist
-          cp $(cabal list-bin exe:json-to-sql) dist/json-to-sql.exe
+          BIN_PATH=$(cabal list-bin json-to-sql-exe)
+          if [[ -f "$BIN_PATH" ]]; then
+            cp "$BIN_PATH" dist/json-to-sql-${{ runner.os == 'Linux' && 'linux' || 'macos' }}
+          else
+            echo "Error: Executable not found!"
+            exit 1
+          fi
 
       - name: Upload built executables
         uses: actions/upload-artifact@v4
         with:
           name: json-to-sql-${{ runner.os }}
           path: dist/*
-
-  release:
-    name: Create GitHub Release
-    needs: build
-    runs-on: ubuntu-latest
-
-    steps:
-      - name: Download all built binaries
-        uses: actions/download-artifact@v4
-        with:
-          path: dist
-
-      - name: Archive binaries
-        run: |
-          cd dist
-          zip json-to-sql-linux.zip json-to-sql-linux
-          zip json-to-sql-macos.zip json-to-sql-macos
-          zip json-to-sql-windows.zip json-to-sql.exe
-
-      - name: Create GitHub Release
-        uses: softprops/action-gh-release@v2
-        with:
-          files: dist/*.zip
-          tag_name: ${{ github.ref }}
-          name: Release ${{ github.ref }}
-          body: |
-            ## JSON-to-SQL CLI Release
-            - **Linux**: `json-to-sql-linux.zip`
-            - **macOS**: `json-to-sql-macos.zip`
-            - **Windows**: `json-to-sql-windows.zip`
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
