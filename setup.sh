@@ -22,27 +22,33 @@ if [[ -z "$BINARY_URL" ]]; then
   exit 1
 fi
 
-# Download and extract the binary
+# Download the binary zip file
 echo "Downloading json-to-sql ($OS)..."
 curl -L "$BINARY_URL" -o "$TEMP_DIR/$FILE"
 
-echo "Extracting..."
+# Check if the zip file is empty
+if [[ $(unzip -l "$TEMP_DIR/$FILE" | wc -l) -le 3 ]]; then
+  echo "Error: The zip file is empty or does not contain the expected binary."
+  exit 1
+fi
+
+# Extract the binary
 unzip -q "$TEMP_DIR/$FILE" -d "$TEMP_DIR"
 
-# List contents of the temporary directory for debugging
-echo "Contents of $TEMP_DIR:"
-ls -l "$TEMP_DIR"
-
 # Check if the extracted directory exists
-EXTRACTED_DIR="$TEMP_DIR/json-to-sql-${OS}"
+EXTRACTED_DIR="$TEMP_DIR/json-to-sql-macOS"
+if [[ "$OS" == "Linux" ]]; then
+  EXTRACTED_DIR="$TEMP_DIR/json-to-sql-Linux"
+fi
+
 if [[ ! -d "$EXTRACTED_DIR" ]]; then
   echo "Error: Extracted directory not found."
   exit 1
 fi
 
 # Check if the binary exists in the extracted directory
-BINARY_PATH="$EXTRACTED_DIR/json-to-sql"
-if [[ ! -f "$BINARY_PATH" ]]; then
+BINARY_PATH=$(find "$TEMP_DIR" -type f -name "json-to-sql" | head -n 1)
+if [[ -z "$BINARY_PATH" ]]; then
   echo "Error: Extracted binary not found."
   exit 1
 fi
