@@ -42,8 +42,8 @@ jobs:
       - name: Set up Haskell (GHC & Cabal)
         uses: haskell-actions/setup@v2
         with:
-          ghc-version: "8.10.7"
-          cabal-version: "3.4.0.0"
+          ghc-version: "9.4.8"
+          cabal-version: "3.12.1.0"
 
       - name: Install dependencies
         run: cabal update

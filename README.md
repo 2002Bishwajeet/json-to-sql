@@ -14,7 +14,11 @@ A simple json parser that converts json to sql queries. All the parsed queries a
 
 ## Installing
 
-> WIP
+Open terminal and run the following commands:
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/2002Bishwajeet/json-to-sql/main/setup.sh | bash
+```
 
 ## Motivation
 
