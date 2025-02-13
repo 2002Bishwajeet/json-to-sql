@@ -52,7 +52,7 @@ jobs:
         run: |
           cabal build
           mkdir -p dist
-          BIN_PATH=$(cabal list-bin exe:json-to-sql)
+          BIN_PATH=$(cabal list-bin json-to-sql-exe)
           if [[ -f "$BIN_PATH" ]]; then
             cp "$BIN_PATH" dist/json-to-sql-${{ runner.os == 'Linux' && 'linux' || 'macos' }}
           else
