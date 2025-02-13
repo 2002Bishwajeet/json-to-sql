@@ -1,19 +1,23 @@
-name: Build and Release
+name: Build and Release JSON-to-SQL
 
 on:
   push:
     tags:
-      - "v*.*.*"
+      - "v*.*.*" # Runs on versioned tags (e.g., v1.0.0)
 
 jobs:
   build:
-    runs-on: ubuntu-latest
+    name: Build on ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
 
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Set up GHC
+      - name: Set up Haskell (GHC & Cabal)
         uses: haskell-actions/setup@v2
         with:
           ghc-version: "8.10.7"
@@ -22,42 +26,54 @@ jobs:
       - name: Install dependencies
         run: cabal update
 
-      - name: Build project
-        run: cabal build
+      - name: Build executable (Linux/macOS)
+        if: runner.os != 'Windows'
+        run: |
+          cabal build
+          mkdir -p dist
+          cp $(cabal list-bin exe:json-to-sql) dist/json-to-sql-${{ runner.os == 'Linux' && 'linux' || 'macos' }}
 
-      - name: Create source distribution
-        run: cabal sdist
+      - name: Build executable (Windows)
+        if: runner.os == 'Windows'
+        run: |
+          cabal build
+          mkdir dist
+          cp $(cabal list-bin exe:json-to-sql) dist/json-to-sql.exe
 
-      - name: Upload source distribution
+      - name: Upload built executables
         uses: actions/upload-artifact@v4
         with:
-          name: json-to-sql
-          path: dist-newstyle/sdist/*.tar.gz
+          name: json-to-sql-${{ runner.os }}
+          path: dist/*
 
   release:
+    name: Create GitHub Release
     needs: build
     runs-on: ubuntu-latest
 
     steps:
-      - name: Download source distribution
+      - name: Download all built binaries
         uses: actions/download-artifact@v4
         with:
-          name: json-to-sql
+          path: dist
 
-      - name: Calculate SHA256 checksum
-        id: sha256
+      - name: Archive binaries
         run: |
-          tarball=$(ls json-to-sql-*.tar.gz)
-          sha256sum $tarball > sha256.txt
-          echo "::set-output name=sha256::$(cut -d' ' -f1 sha256.txt)"
+          cd dist
+          zip json-to-sql-linux.zip json-to-sql-linux
+          zip json-to-sql-macos.zip json-to-sql-macos
+          zip json-to-sql-windows.zip json-to-sql.exe
 
-      - name: Create release
-        uses: ncipollo/release-action@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
         with:
-          tag: ${{ github.ref }}
+          files: dist/*.zip
+          tag_name: ${{ github.ref }}
           name: Release ${{ github.ref }}
           body: |
-            SHA256 checksum: ${{ steps.sha256.outputs.sha256 }}
-          artifacts: json-to-sql-*.tar.gz
+            ## JSON-to-SQL CLI Release
+            - **Linux**: `json-to-sql-linux.zip`
+            - **macOS**: `json-to-sql-macos.zip`
+            - **Windows**: `json-to-sql-windows.zip`
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
