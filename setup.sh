@@ -9,8 +9,8 @@ TEMP_DIR=$(mktemp -d)
 # Detect OS
 OS="$(uname -s)"
 case "$OS" in
-    Linux*)   FILE="json-to-sql-Linux.zip" ;;
-    Darwin*)  FILE="json-to-sql-macOS.zip" ;;
+    Linux*)   FILE="json-to-sql-linux.zip" ;;
+    Darwin*)  FILE="json-to-sql-macos.zip" ;;
     *)        echo "Unsupported OS: $OS"; exit 1 ;;
 esac
 
