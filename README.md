@@ -25,13 +25,13 @@ curl -fsSL https://raw.githubusercontent.com/2002Bishwajeet/json-to-sql/main/set
 After installation, you can use the `json-to-sql` command to convert a JSON file to SQL. The basic usage is as follows:
 
 ```bash
-json-to-sql <file> [table] [--normalize] [dest]
+json-to-sql <file> [table] [dest] [--normalize]
 ```
 
 - `file`: The JSON file to convert.
 - `table`: (Optional) The table name for the SQL file. If not provided, the filename will be used.
-- `--normalize`: (Optional) Normalize the JSON data.
 - `dest`: (Optional) Destination path for the SQL file. If not provided, the current directory will be used.
+- `--normalize`: (Optional) Normalize the JSON data.
 
 ### Examples
 
@@ -50,13 +50,19 @@ json-to-sql data.json my_table
 Convert a JSON file to SQL with normalization:
 
 ```bash
-json-to-sql data.json --normalize
+json-to-sql data.json my_table --normalize
 ```
 
 Convert a JSON file to SQL and save the output to a specific directory:
 
 ```bash
-json-to-sql data.json my_table --normalize /path/to/output
+json-to-sql data.json my_table /path/to/output --normalize
+```
+
+Convert a JSON file to SQL using named arguments:
+
+```bash
+json-to-sql --file=data.json --table=my_table --dest=/path/to/output --normalize
 ```
 
 ## Motivation
@@ -69,4 +75,4 @@ Contributions are highly Welcomed 💙 . Feel free to open PRs for small issues 
 
 ## License
 
-This project is open source and available under the [ BSD-3-Clause](LICENSE).
+This project is open source and available under the [BSD-3-Clause](LICENSE).

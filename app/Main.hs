@@ -1,12 +1,13 @@
 module Main (main) where
 
-import Control.Monad (unless)
-import Data.Maybe
+import Control.Monad (unless, when)
+import Data.List (isPrefixOf)
+import Data.Maybe (fromJust, fromMaybe)
 import Data.Time.Clock (diffUTCTime, getCurrentTime)
-import GHC.Base
 import Lib
 import System.Directory (doesFileExist)
 import System.Environment (getArgs)
+import System.Exit (exitSuccess)
 import System.FilePath (takeBaseName, takeExtension)
 
 data Config = Config
@@ -17,51 +18,72 @@ data Config = Config
   }
   deriving (Show)
 
-parseConfigs :: IO Config
-parseConfigs = do
-  args <- getArgs
-  -- Check that we have at least file Args
+data Arguments = Arguments
+  { argFile :: Maybe String,
+    argTable :: Maybe String,
+    argNormalize :: Bool,
+    argDest :: Maybe String,
+    argHelp :: Bool,
+    argVersion :: Bool
+  }
+  deriving (Show)
 
-  case args of
-    (file : rest) -> do
-      let tableNameArg = case rest of
-            (t : _) -> Just t
-            _ -> Nothing
-          normalizeFlag = "--normalize" `elem` rest
-          destArg = case reverse rest of
-            (d : _) -> if d == "." then "." else d
-            _ -> "."
-      -- if No tablename provided, use the filename
+-- Parse individual argument
+parseArgument :: String -> Arguments -> Arguments
+parseArgument arg args
+  | "--file=" `isPrefixOf` arg = args {argFile = Just (drop 7 arg)}
+  | "--table=" `isPrefixOf` arg = args {argTable = Just (drop 8 arg)}
+  | "--dest=" `isPrefixOf` arg = args {argDest = Just (drop 7 arg)}
+  | "--normalize" == arg = args {argNormalize = True}
+  | "-h" == arg || "--help" == arg = args {argHelp = True}
+  | "-v" == arg || "--version" == arg = args {argVersion = True}
+  | otherwise = case (argFile args, argTable args, argDest args) of
+      (Nothing, _, _) -> args {argFile = Just arg}
+      (Just _, Nothing, _) -> args {argTable = Just arg}
+      (Just _, Just _, Nothing) -> args {argDest = Just arg}
+      _ -> args
+
+-- Parse all arguments
+argumentParser :: [String] -> Arguments
+argumentParser args = foldl (flip parseArgument) defaultArgs args
+  where
+    defaultArgs = Arguments Nothing Nothing False Nothing False False
+
+-- Parse configuration from arguments
+parseConfigs :: Arguments -> IO (Maybe Config)
+parseConfigs args = do
+  case argFile args of
+    Just file -> do
+      let tableNameArg = argTable args
+          normalizeFlag = argNormalize args
+          destArg = fromMaybe "." (argDest args)
       let table = fromMaybe (takeBaseName file) tableNameArg
-      return
-        Config
-          { filepath = file,
-            tableName = table,
-            normalize = normalizeFlag,
-            destPath = destArg
-          }
-    _ -> error "Usage: json2sql <file> [table] [--normalize] [dest]"
+      return $
+        Just
+          Config
+            { filepath = file,
+              tableName = table,
+              normalize = normalizeFlag,
+              destPath = destArg
+            }
+    Nothing -> do
+      putStrLn "Usage: json-to-sql <file> [table] [dest] [--normalize]"
+      return Nothing
 
+-- Read and parse JSON file
 readAndParseJson :: FilePath -> IO (Maybe JsonValue)
 readAndParseJson file = do
-  -- Check if file Exists
   fileExists <- doesFileExist file
   unless fileExists $ error "File does not exist"
-
-  -- check the valid .json extension
   let extension = takeExtension file
   unless (extension == ".json") $ error "File must have .json extension"
-
-  -- Read the file
   content <- readFile file
-  -- Clear the whitespace at the end of document if present
   let content' = reverse $ dropLeading $ reverse content
-   in -- if content is empty
-      -- Parse the JSON
-      case parseJsonValue content' of
-        Just (json, "") -> return $ Just json
-        _ -> error "Invalid JSON"
+  case parseJsonValue content' of
+    Just (json, "") -> return $ Just json
+    _ -> error "Invalid JSON"
 
+-- Convert JSON to SQL
 convertToSql :: Config -> JsonValue -> String
 convertToSql config json = do
   let isOnlyJsonArray = isOnlyJsonArrayObject json
@@ -76,37 +98,38 @@ convertToSql config json = do
           insertTableSql = insertTable (tableName config) json
        in createTableSql ++ "\n\n" ++ insertTableSql
 
+-- Main function
 main :: IO ()
 main = do
   start <- getCurrentTime
   args <- getArgs
-  when (null args) $ error "Usage: json-to-sql -h for help"
-  if head args == "-h" || head args == "--help"
-    then do
-      putStrLn "Usage: json-to-sql <file> [table] [--normalize] [dest]"
-      putStrLn "Options:"
-      putStrLn "  --normalize  Normalize the JSON data"
-      putStrLn "  dest         Destination path for the SQL file"
-      putStrLn "  table        Table name for the SQL file"
-      putStrLn "  file         JSON file to convert"
-      putStrLn "  -h           Display this help message"
-      putStrLn "  -v           Display the version"
-      return ()
-    else
-      if head args == "-v" || head args == "--version"
-        then do
-          putStrLn "json2sql version 0.0.1"
-          return ()
-        else do
-          config <- parseConfigs
-          json <- readAndParseJson (filepath config)
-          _ <- case json of
-            Just j -> do
-              let sql = convertToSql config j
-                  outputFile = destPath config ++ "/" ++ tableName config ++ ".sql"
-              writeFile outputFile sql
-              putStrLn $ "SQL file created successfully: " ++ outputFile
-            _ -> error "Invalid JSON"
+  let parsedArgs = argumentParser args
+  print parsedArgs
+  when (argHelp parsedArgs) $ do
+    putStrLn "Usage: json-to-sql <file> [table] [dest] [--normalize]"
+    putStrLn "Options:"
+    putStrLn "  --file=filename  JSON file to convert"
+    putStrLn "  --table=table    Table name for the SQL file"
+    putStrLn "  --dest=dest      Destination path for the SQL file"
+    putStrLn "  --normalize      Normalize the JSON data"
+    putStrLn "  -h, --help       Display this help message"
+    putStrLn "  -v, --version    Display the version"
+    exitSuccess
+  when (argVersion parsedArgs) $ do
+    putStrLn "json-to-sql version 0.0.1"
+    exitSuccess
+  maybeConfig <- parseConfigs parsedArgs
+  case maybeConfig of
+    Just config -> do
+      json <- readAndParseJson (filepath config)
+      case json of
+        Just j -> do
+          let sql = convertToSql config j
+              outputFile = destPath config ++ "/" ++ tableName config ++ ".sql"
+          writeFile outputFile sql
+          putStrLn $ "SQL file created successfully: " ++ outputFile
           end <- getCurrentTime
           let diff = diffUTCTime end start
           putStrLn $ "Execution time: " ++ show diff
+        _ -> error "Invalid JSON"
+    Nothing -> return ()
