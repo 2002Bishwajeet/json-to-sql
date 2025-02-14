@@ -72,16 +72,12 @@ jobs:
     steps:
       - name: Download all built binaries
         uses: actions/download-artifact@v4
-      - name: Move binaries to dist directory
-        run: |
-          mv dist/json-to-sql-Linux/* dist/
-          mv dist/json-to-sql-macOS/* dist/
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
           files: |
-            dist/json-to-sql-Linux
-            dist/json-to-sql-macOS
+            json-to-sql-Linux
+            json-to-sql-macOS
           tag_name: ${{ github.ref }}
           name: Release ${{ github.ref }}
           body: |
