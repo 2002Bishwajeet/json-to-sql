@@ -104,7 +104,6 @@ main = do
   start <- getCurrentTime
   args <- getArgs
   let parsedArgs = argumentParser args
-  print parsedArgs
   when (argHelp parsedArgs) $ do
     putStrLn "Usage: json-to-sql <file> [table] [dest] [--normalize]"
     putStrLn "Options:"
