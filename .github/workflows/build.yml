@@ -72,8 +72,6 @@ jobs:
     steps:
       - name: Download all built binaries
         uses: actions/download-artifact@v4
-        with:
-          path: dist
       - name: Move binaries to dist directory
         run: |
           mv dist/json-to-sql-Linux/* dist/
