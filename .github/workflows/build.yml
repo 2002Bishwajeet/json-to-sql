@@ -95,8 +95,8 @@ jobs:
         uses: softprops/action-gh-release@v2
         with:
           files: |
-            json-to-sql-Linux
-            json-to-sql-macOS
+            dist/json-to-sql-Linux.zip
+            dist/json-to-sql-macOS.zip
           tag_name: ${{ github.ref }}
           name: Release ${{ github.ref }}
           body: |
