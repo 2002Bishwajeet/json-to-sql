@@ -68,12 +68,14 @@ jobs:
             echo "Error: Executable not found!"
             exit 1
           fi
-
+      - name: Zip executables
+        run: |
+          zip -j dist/json-to-sql-${{ runner.os == 'Linux' && 'linux' || 'macos' }}.zip dist/json-to-sql-${{ runner.os == 'Linux' && 'linux' || 'macos' }}
       - name: Upload built executables
         uses: actions/upload-artifact@v4
         with:
-          name: json-to-sql-${{ runner.os }}
-          path: dist/json-to-sql-${{ runner.os == 'Linux' && 'linux' || 'macos' }}
+          name: json-to-sql-${{ runner.os == 'Linux' && 'linux' || 'macos' }}
+          path: dist/json-to-sql-${{ runner.os == 'Linux' && 'linux' || 'macos' }}.zip
   release:
     name: Create GitHub Release
     needs: build
@@ -84,24 +86,17 @@ jobs:
         with:
           merge-multiple: true
           path: dist
-      - name: List directory contents
-        run: ls -l dist
-      - name: Zip executables
-        run: |
-          zip -j dist/json-to-sql-Linux.zip dist/json-to-sql-linux
-          zip -j dist/json-to-sql-macOS.zip dist/json-to-sql-macos
-
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
           files: |
-            dist/json-to-sql-Linux.zip
-            dist/json-to-sql-macOS.zip
+            dist/json-to-sql-linux.zip
+            dist/json-to-sql-macos.zip
           tag_name: ${{ github.ref }}
           name: Release ${{ github.ref }}
           body: |
             ## JSON-to-SQL CLI Release
-            - **Linux**: `json-to-sql-Linux.zip`
-            - **macOS**: `json-to-sql-macOS.zip`
+            - **Linux**: `json-to-sql-linux.zip`
+            - **macOS**: `json-to-sql-macos.zip`
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
