@@ -9,10 +9,18 @@ TEMP_DIR=$(mktemp -d)
 # Detect OS
 OS="$(uname -s)"
 case "$OS" in
-    Linux*)   FILE="json-to-sql-linux.zip" ;;
-    Darwin*)  FILE="json-to-sql-macos.zip" ;;
+    Linux*)   
+      FILE="json-to-sql-linux.zip"
+      FILENAME="json-to-sql-linux"
+      ;;
+    Darwin*)  
+      FILE="json-to-sql-macos.zip"
+      FILENAME="json-to-sql-macos"
+      ;;
+
     *)        echo "Unsupported OS: $OS"; exit 1 ;;
 esac
+
 
 # Get the correct binary URL
 BINARY_URL=$(echo "$LATEST_RELEASE" | grep "browser_download_url" | grep "$FILE" | cut -d '"' -f 4)
@@ -35,19 +43,9 @@ fi
 # Extract the binary
 unzip -q "$TEMP_DIR/$FILE" -d "$TEMP_DIR"
 
-# Check if the extracted directory exists
-EXTRACTED_DIR="$TEMP_DIR/json-to-sql-macOS"
-if [[ "$OS" == "Linux" ]]; then
-  EXTRACTED_DIR="$TEMP_DIR/json-to-sql-Linux"
-fi
-
-if [[ ! -d "$EXTRACTED_DIR" ]]; then
-  echo "Error: Extracted directory not found."
-  exit 1
-fi
 
 # Check if the binary exists in the extracted directory
-BINARY_PATH=$(find "$TEMP_DIR" -type f -name "json-to-sql" | head -n 1)
+BINARY_PATH=$(find "$TEMP_DIR" -type f -name "$FILENAME" | head -n 1)
 if [[ -z "$BINARY_PATH" ]]; then
   echo "Error: Extracted binary not found."
   exit 1
@@ -56,7 +54,7 @@ fi
 # Install the binary
 echo "Installing to $INSTALL_DIR..."
 sudo mv "$BINARY_PATH" "$INSTALL_DIR/json-to-sql"
-sudo chmod +x "$INSTALL_DIR/json-to-sql"
+sudo chmod +x "$INSTALL_DIR"
 
 # Cleanup
 rm -rf "$TEMP_DIR"
