@@ -39,6 +39,15 @@ jobs:
         env:
           PATH: /usr/local/opt/llvm/bin:$PATH
 
+      - name: Cache Homebrew
+        if: runner.os == 'macOS'
+        uses: actions/cache@v4
+        with:
+          path: /usr/local/Homebrew
+          key: ${{ runner.os }}-homebrew-${{ hashFiles('**/*.cabal', '**/cabal.config') }}
+          restore-keys: |
+            ${{ runner.os }}-homebrew-
+
       - name: Set up Haskell (GHC & Cabal)
         uses: haskell-actions/setup@v2
         with:
@@ -72,6 +81,16 @@ jobs:
     steps:
       - name: Download all built binaries
         uses: actions/download-artifact@v4
+        with:
+          merge-multiple: true
+          path: dist
+      - name: List directory contents
+        run: ls -l dist
+      - name: Zip executables
+        run: |
+          zip -j dist/json-to-sql-Linux.zip dist/json-to-sql-linux
+          zip -j dist/json-to-sql-macOS.zip dist/json-to-sql-macos
+
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
@@ -84,5 +103,5 @@ jobs:
             ## JSON-to-SQL CLI Release
             - **Linux**: `json-to-sql-Linux.zip`
             - **macOS**: `json-to-sql-macOS.zip`
-            env:
-              GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
